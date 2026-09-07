@@ -1,90 +1,71 @@
 # QoderWake Mobile
 
-Android 客户端，把 qoderwake-cn WebUI 装进 WebView，单主机管理。
+面向多个 QoderWake 实例的 Android 客户端。应用在本地保存管理员确认过的 HTTPS 主机列表，并在 WebView 中打开对应 WebUI。
 
-## 与 dsh-mobile 的关系
+## 功能
 
-本项目 fork 自 [yanJ26/dsh-mobile](https://github.com/yanJ26/dsh-mobile)，做了大幅简化：
+- 多主机列表：添加、编辑、删除和连通性提示；
+- 从旧版单主机配置自动迁移；
+- 只接受不含账号密码的 HTTPS 地址；
+- Qoder 登录 popup 仅接受当前主机 callback 与 Qoder 官方登录域；
+- 下载只允许来自当前主机的 HTTPS URL，Cookie 不会转发给其他来源；
+- Android 明文流量、mixed content、文件访问和应用备份默认关闭。
 
-| 项 | dsh-mobile | qoderwake-mobile |
-|---|---|---|
-| 主机数 | 多主机列表 + 增删改 | 单主机（默认 qoderwake.rvs-lighting.com），可编辑 URL |
-| 悬浮 dock | 鲸鱼（侧边栏）+ 网格（主机切换）+ 主机名 | 无（qoderwake-cn 单一实例，不需要） |
-| 一键重启 | 红色 ⟳ 调用 dsh-service-restart 插件 | 无（qoderwake-cn 没有等价插件） |
-| 检查更新 | 拉 qhrc.work/dsh-app/latest.json | 无（直接交付 APK，无需 OTA） |
-| 鉴权 | 依赖宿主 dsh-auth-gateway 插件 | qoderwake-cn 自带 OAuth（qoder.com.cn 设备授权流） |
+## 认证边界
 
-## 工作原理
+QoderWake 包含两层不同认证：
 
-```
-[Android APK WebView]
-        │ HTTPS
-        ▼
-[nginx: qoderwake.rvs-lighting.com]
-        │ 反代（无认证层 —— 见下方"鉴权说明"）
-        ▼
-[qoderwake-cn daemon :19830]
-```
+1. daemon owner 使用 Qoder 账号完成厂商侧授权；
+2. 每个远程浏览器或设备通过 `/api/frontend-auth/*` 建立自己的 frontend session。
 
-## 鉴权说明
+OAuth/PKCE 保护厂商账号授权，但不会自动解决公网入口、反向代理信任、Cookie、CSRF、限流或 APK 更新链问题。公网实例还应使用可信网络、入口 ACL 或独立访问网关。
 
-**本应用不引入额外鉴权层**。决策理由：qoderwake-cn 的登录是 OAuth 2.0 Device Authorization Grant（PKCE/S256），挑战发到 `qoder.com.cn`，本地没有任何独立用户名/密码/TOTP；本地再多一层 OTP 网关无法替代厂商侧认证。
-
-如果以后 qoderwake-cn 增加了本地 TOTP 支持，或者你希望把这台机器从厂商云解耦，可以参考 [dsh-auth-gateway](https://github.com/xbzbing/dsh-auth-gateway) 的设计（密码 scrypt + TOTP AES-256-GCM + HttpOnly+SameSite 30 天会话 + 三层防爆破 + JSONL 审计日志）加一层独立网关。
+不要通过伪造 loopback `Host`、删除代理来源头或依赖未公开的内部环境变量绕过 daemon 的远程访问保护。优先采用 QoderWake 官方支持的 external 模式，或保持本地监听并通过 VPN/SSH 隧道访问。
 
 ## 构建
 
-工具链全部装在 `/root/tokenHUB/tokenDYB/qoderwake/build-cache/`：
+需要 Node.js、pnpm、JDK 17、Android SDK 和 Gradle。工具位置由构建环境配置，不写入仓库。
 
 ```bash
-export JAVA_HOME=/root/tokenHUB/tokenDYB/qoderwake/build-cache/jdk-17.0.2
-export ANDROID_HOME=/root/tokenHUB/tokenDYB/qoderwake/build-cache/android-sdk
-export GRADLE_USER_HOME=/root/tokenHUB/tokenDYB/qoderwake/build-cache/.gradle
-export ANDROID_USER_HOME=/root/tokenHUB/tokenDYB/qoderwake/build-cache/android-home
-export GRADLE_OPTS="-Dorg.gradle.native.lib.dir=/root/tokenHUB/tokenDYB/qoderwake/build-cache/native-libs/linux-amd64/net/rubygrapefruit/platform/linux-amd64 -Duser.home=$ANDROID_USER_HOME"
-export PATH=$JAVA_HOME/bin:/root/tokenHUB/tokenDYB/qoderwake/build-cache/gradle-8.7/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+export JAVA_HOME=<JDK_HOME>
+export ANDROID_HOME=<ANDROID_SDK_HOME>
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
 
-cd /root/tokenHUB/tokenDYB/qoderwake/qoderwake-mobile
 pnpm install
 node scripts/gen-icons.mjs
-npx cap sync android
-gradle -p android assembleDebug --no-daemon
-# 产物: android/app/build/outputs/apk/debug/app-debug.apk
+pnpm build:debug
 ```
 
-## 调试 keystore
-
-当前是 debug 签名（`~/.android/debug.keystore`）。
-**keystore 一旦丢失，新版本无法覆盖安装**。已备份在 `/root/tokenHUB/tokenDYB/qoderwake/build-cache/debug.keystore`。
-
-## 部署
-
-详见 `/root/tokenHUB/tokenDYB/qoderwake/qoderwake-deploy.sh`：
+debug 包只用于开发测试。生产构建使用独立 release keystore，通过环境变量注入：
 
 ```bash
-sudo bash /root/tokenHUB/tokenDYB/qoderwake/qoderwake-deploy.sh
+export ANDROID_RELEASE_STORE_FILE=<ABSOLUTE_KEYSTORE_PATH>
+export ANDROID_RELEASE_STORE_PASSWORD=<SECRET>
+export ANDROID_RELEASE_KEY_ALIAS=<ALIAS>
+export ANDROID_RELEASE_KEY_PASSWORD=<SECRET>
+pnpm build
 ```
 
-它会：
-1. 复制 nginx 配置到 `/etc/nginx/sites-enabled/`
-2. certbot 申请 qoderwake.rvs-lighting.com 证书
-3. nginx -t + reload
-4. curl 端到端冒烟
+keystore 和密码不得提交 GitHub、写入 README、复制到公网下载目录或打印到 CI 日志。
 
-### nginx 反代的关键点（重要）
+## 发布
 
-qoderwake-cn 默认仅监听 loopback，并对每个请求做双重校验：
+发布脚本只接受显式目标目录，并会先用 `apksigner` 验证签名，再生成 SHA-256：
 
-1. **Host 头必须匹配 `127.0.0.1:19830`**（或 `localhost:19830`）
-2. **禁止任何 `X-Forwarded-*` / `X-Real-IP` 头** —— 它假定 loopback 客户端不会经过代理
+```bash
+APK_FILE=<SIGNED_RELEASE_APK> \
+PUBLISH_DIR=<APK_PUBLISH_DIR> \
+APKSIGNER=<APKSIGNER_PATH> \
+bash scripts/deploy-apk.sh
+```
 
-因此反代必须：
-- `proxy_set_header Host "127.0.0.1:19830";`
-- `proxy_set_header X-Real-IP "";`
-- `proxy_set_header X-Forwarded-For "";`
-- `proxy_set_header X-Forwarded-Proto "";`
+下载页应同时公布 APK SHA-256 与签名证书 SHA-256 指纹。MD5 不能作为安全完整性校验。
 
-否则 daemon 会返回 `403 {"code":"daemon_host_rejected"}`。
+## 多主机安全说明
+
+主机列表由用户在运行时维护，因此 Capacitor 的静态 `allowNavigation` 无法预先枚举所有域名。当前版本会在入口、OAuth callback 和下载链路执行 HTTPS/origin 校验。添加主机等同于信任该服务器，应只添加自己管理或明确信任的实例。
+
+后续如需进一步缩小原生桥暴露面，可把远程 WebUI 移入不注入 Capacitor bridge 的独立普通 WebView，本地启动页继续使用 Capacitor Preferences。
 
 ## 许可
 

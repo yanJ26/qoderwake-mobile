@@ -18,6 +18,11 @@ android/capacitor-cordova-android-plugins/build/
 *.iml
 .gradle/
 local.properties
+*.jks
+*.keystore
+.env
+.env.*
+google-services.json
 
 # 编辑器临时文件
 *.swp

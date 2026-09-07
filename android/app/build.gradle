@@ -4,6 +4,11 @@ apply plugin: 'com.android.application'
 // versionCode 由 x.y.z 换算为 x*10000+y*100+z，保证每次发版递增可覆盖升级
 def pkgJson = new groovy.json.JsonSlurper().parse(file('../../package.json'), 'utf-8')
 def pkgVerParts = pkgJson.version.tokenize('.').collect { it.replaceAll(/\D.*$/, '') as int }
+def releaseStoreFile = System.getenv('ANDROID_RELEASE_STORE_FILE')
+def releaseStorePassword = System.getenv('ANDROID_RELEASE_STORE_PASSWORD')
+def releaseKeyAlias = System.getenv('ANDROID_RELEASE_KEY_ALIAS')
+def releaseKeyPassword = System.getenv('ANDROID_RELEASE_KEY_PASSWORD')
+def hasReleaseSigning = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
 
 android {
     namespace "com.rvslighting.qoderwake"
@@ -21,9 +26,22 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

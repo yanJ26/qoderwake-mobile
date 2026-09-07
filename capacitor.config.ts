@@ -6,13 +6,12 @@ const config: CapacitorConfig = {
   webDir: 'www',
   server: {
     androidScheme: 'https',
-    // 单主机模式：默认指向 qoderwake.rvs-lighting.com 子域；
-    // 允许用户编辑为其它 https:// 主机，故 allowNavigation 通配放行。
+    // 多主机地址在运行时由用户维护；表单仅接受 HTTPS。
+    // Capacitor 的静态 allowNavigation 无法表达运行时主机集合。
     allowNavigation: ['*'],
   },
   android: {
-    // 用户可能编辑为 http:// 内网主机
-    allowMixedContent: true,
+    allowMixedContent: false,
   },
 };
 

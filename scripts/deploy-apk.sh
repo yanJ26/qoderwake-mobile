@@ -1,23 +1,25 @@
 #!/usr/bin/env bash
-# 部署 APK 并生成更新清单 latest.json（app 内「检查更新」读取）
-set -e
+# Publish a signed release APK without embedding server paths or credentials.
+set -euo pipefail
 cd "$(dirname "$0")/.."
 
-VERSION=$(node -p "require('./package.json').version")
-CODE=$(node -p "const v=require('./package.json').version.split('.').map(Number); v[0]*10000+v[1]*100+v[2]")
-NOTES="${1:-}"
+APK_FILE="${APK_FILE:-android/app/build/outputs/apk/release/app-release.apk}"
+PUBLISH_DIR="${PUBLISH_DIR:?set PUBLISH_DIR to the private deployment target}"
+APKSIGNER="${APKSIGNER:-apksigner}"
 
-cp android/app/build/outputs/apk/debug/app-debug.apk /var/www/dsh-app/dsh-mobile.apk
-[ -f docs/dshdocs.html ] && mkdir -p /var/www/dshdocs && cp docs/dshdocs.html /var/www/dshdocs/index.html
-node -e '
-  const [version, code, notes] = process.argv.slice(1);
-  const manifest = {
-    version,
-    versionCode: Number(code),
-    url: "https://qhrc.work/dsh-app/dsh-mobile.apk",
-    notes,
-  };
-  require("fs").writeFileSync("/var/www/dsh-app/latest.json", JSON.stringify(manifest, null, 2));
-' "$VERSION" "$CODE" "$NOTES"
+if [[ ! -f "$APK_FILE" ]]; then
+  echo "release APK not found: $APK_FILE" >&2
+  exit 1
+fi
+if ! command -v "$APKSIGNER" >/dev/null 2>&1; then
+  echo "apksigner not found; set APKSIGNER to its absolute path" >&2
+  exit 1
+fi
 
-echo "deployed v$VERSION (versionCode $CODE) -> /var/www/dsh-app/"
+"$APKSIGNER" verify --print-certs "$APK_FILE"
+install -d -m 0755 "$PUBLISH_DIR"
+install -m 0644 "$APK_FILE" "$PUBLISH_DIR/qoderwake-mobile.apk"
+sha256sum "$PUBLISH_DIR/qoderwake-mobile.apk" \
+  > "$PUBLISH_DIR/qoderwake-mobile.apk.sha256"
+
+echo "published signed APK and SHA-256 to $PUBLISH_DIR"

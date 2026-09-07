@@ -13,23 +13,23 @@
       <h1>QoderWake 管理</h1>
     </div>
     <div class="header-btns">
-      <button id="add-btn" class="icon-btn" aria-label="编辑主机地址">✎</button>
+      <button id="add-btn" class="icon-btn" aria-label="添加主机">+</button>
     </div>
   </header>
 
   <main>
     <ul id="host-list"></ul>
-    <p id="empty-tip" class="empty-tip" hidden>没有主机，点右上角 ✎ 添加</p>
+    <p id="empty-tip" class="empty-tip" hidden>还没有主机，点右上角 + 添加可信 HTTPS 地址</p>
   </main>
 
   <dialog id="host-dialog">
     <form id="host-form" method="dialog">
-      <h2 id="dialog-title">主机地址</h2>
+      <h2 id="dialog-title">添加主机</h2>
       <label>名称
-        <input id="host-name" type="text" required maxlength="40" placeholder="例如：QoderWake">
+        <input id="host-name" type="text" required maxlength="40" placeholder="例如：主 VPS">
       </label>
       <label>地址
-        <input id="host-url" type="url" inputmode="url" required placeholder="https://qoderwake.rvs-lighting.com/">
+        <input id="host-url" type="url" inputmode="url" required placeholder="https://your-qoderwake.example/">
       </label>
       <p id="form-error" class="form-error" hidden></p>
       <menu>
