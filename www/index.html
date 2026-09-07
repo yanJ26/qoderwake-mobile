@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>QoderWake Mobile</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="brand-badge"><img src="assets/qoderwake-icon.svg" alt="" width="22" height="22"></span>
+      <h1>QoderWake 管理</h1>
+    </div>
+    <div class="header-btns">
+      <button id="add-btn" class="icon-btn" aria-label="编辑主机地址">✎</button>
+    </div>
+  </header>
+
+  <main>
+    <ul id="host-list"></ul>
+    <p id="empty-tip" class="empty-tip" hidden>没有主机，点右上角 ✎ 添加</p>
+  </main>
+
+  <dialog id="host-dialog">
+    <form id="host-form" method="dialog">
+      <h2 id="dialog-title">主机地址</h2>
+      <label>名称
+        <input id="host-name" type="text" required maxlength="40" placeholder="例如：QoderWake">
+      </label>
+      <label>地址
+        <input id="host-url" type="url" inputmode="url" required placeholder="https://qoderwake.rvs-lighting.com/">
+      </label>
+      <p id="form-error" class="form-error" hidden></p>
+      <menu>
+        <button type="button" id="delete-btn" class="danger" hidden>删除</button>
+        <button type="button" id="cancel-btn">取消</button>
+        <button type="submit" id="save-btn" class="primary">保存</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

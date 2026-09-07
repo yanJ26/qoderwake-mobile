@@ -1,0 +1,48 @@
+node_modules/
+
+# Android 构建产物与本地配置
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/capacitor.build.gradle
+android/capacitor-cordova-android-plugins/build/
+
+# 构建产物 APK/AAB（由 /var/www/qoderwake/docs/ 分发，不入库）
+*.apk
+*.aab
+
+# Android Studio / IDEA
+.vscode/
+.idea/
+*.iml
+.gradle/
+local.properties
+
+# 编辑器临时文件
+*.swp
+*~
+.DS_Store
+
+# Android 构建过程临时
+captures/
+
+# Capacitor 同步产物（每次 cap sync 重新生成）
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+
+# ====================
+# ⚠️ 不要提交的秘密文件
+# ====================
+# Debug 签名 keystore —— 丢了这个 keystore，APK 升级时签名不匹配，无法覆盖安装。
+# 已备份在 build-cache/android-home/debug.keystore，不要入库。
+# 真要入库时请用 release keystore + signingConfig，并加密存放。
+debug.keystore
+*.keystore
+*.jks
+
+# 任何含密钥/token/凭据的本地配置
+.env
+.env.local
+secrets.json

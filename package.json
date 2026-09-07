@@ -1,0 +1,20 @@
+{
+  "name": "qoderwake-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Android manager for qoderwake-cn WebUI (Capacitor WebView shell)",
+  "scripts": {
+    "build": "cap sync android && gradle -p android assembleDebug --no-daemon"
+  },
+  "dependencies": {
+    "@capacitor/app": "6.0.3",
+    "@capacitor/core": "6.2.1",
+    "@capacitor/preferences": "6.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/android": "6.2.1",
+    "@capacitor/cli": "6.2.1",
+    "sharp": "^0.35.4",
+    "typescript": "~5.5.4"
+  }
+}
